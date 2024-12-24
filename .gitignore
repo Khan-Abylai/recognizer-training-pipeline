@@ -1,0 +1,5 @@
+debug
+.idea
+.idea/
+__pycache__
+*.csv

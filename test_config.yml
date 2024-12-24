@@ -1,0 +1,16 @@
+images: data_csv/test.csv
+evaluate: True
+output_folder: /tmp/pycharm_project_177/inference/
+model:
+  path: /tmp/pycharm_project_177/64_100_Train:_8.3789,_Accuracy:_0.9903,_Val:_0.8664,_Accuracy:_0.9992,_lr:_1e-05.pth
+  type: extended
+  num_class: 37
+  lstm_layers: 2
+  is_lstm_bidirectional: True
+  classification_regions:
+use_gpu: True
+transforms: no_transform
+threshold: 0.7
+alphabet: string.digits+string.ascii_lowercase
+image_w: 160
+image_h: 64

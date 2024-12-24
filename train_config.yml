@@ -1,0 +1,42 @@
+global:
+  experiment_name: test
+  run_name: test_dist
+  distributed: True
+  epochs: 100
+  checkpoint: /tmp/pycharm_project_177/weights_test_dist/
+  gpu: 1
+  alphabet: string.digits+string.ascii_lowercase
+
+model:
+  type: extended
+  num_class: 37
+  lstm_layers: 2
+  is_lstm_bidirectional: True
+  classification_regions: # leave empty for no classification head, either way provide regions in list
+
+optimizer:
+  lr: 0.0001
+
+scheduler:
+  mode: min
+  patience: 5
+  factor: 0.1
+  min_lr: 1e-6
+
+train_data:
+  csv_files: ['data_csv/train.csv']
+  transform: transform_old
+  image_w: 160
+  image_h: 64
+
+val_data:
+  csv_files: ['data_csv/train.csv']
+  transform: no_transform
+  image_w: 160
+  image_h: 64
+
+loader:
+  batch_size: 128
+  num_workers: 64
+  pin_memory: True
+  drop_last: True
