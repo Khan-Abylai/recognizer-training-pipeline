@@ -1,13 +1,13 @@
-images: data_csv/test.csv
+images: test.csv
 evaluate: True
-output_folder: /tmp/pycharm_project_177/inference/
+output_folder: inference
 model:
-  path: /tmp/pycharm_project_177/64_100_Train:_8.3789,_Accuracy:_0.9903,_Val:_0.8664,_Accuracy:_0.9992,_lr:_1e-05.pth
+  path: /workspace/recognizer-training-pipeline/weights_test/
   type: extended
   num_class: 37
   lstm_layers: 2
   is_lstm_bidirectional: True
-  classification_regions:
+  classification_regions: ["dubai", "abu-dhabi", "sharjah", "ajman", "ras-al-khaimah", "fujairah", "alquwain", "bahrein", "oman", "saudi", "quatar", "kuwait", "others"]
 use_gpu: True
 transforms: no_transform
 threshold: 0.7

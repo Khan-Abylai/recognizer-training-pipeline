@@ -1,9 +1,10 @@
 global:
-  experiment_name: test
-  run_name: test_dist
+  experiment_name: uae
+  run_name: cc_2k
+  run_id: 7087c163f9b549cebd07d2bb581b829b
   distributed: True
   epochs: 100
-  checkpoint: /tmp/pycharm_project_177/weights_test_dist/
+  checkpoint: /workspace/recognizer-training-pipeline/weights_test
   gpu: 1
   alphabet: string.digits+string.ascii_lowercase
 
@@ -12,7 +13,7 @@ model:
   num_class: 37
   lstm_layers: 2
   is_lstm_bidirectional: True
-  classification_regions: # leave empty for no classification head, either way provide regions in list
+  classification_regions: ["dubai", "abu-dhabi", "sharjah", "ajman", "ras-al-khaimah", "fujairah", "alquwain", "bahrein", "oman", "saudi", "quatar", "kuwait", "others"] # leave empty(not []) for no class
 
 optimizer:
   lr: 0.0001
@@ -24,19 +25,19 @@ scheduler:
   min_lr: 1e-6
 
 train_data:
-  csv_files: ['data_csv/train.csv']
+  csv_files: ['/workspace/pycharm_project_769/train_26.12.24.csv']
   transform: transform_old
   image_w: 160
   image_h: 64
 
 val_data:
-  csv_files: ['data_csv/train.csv']
+  csv_files: ['/workspace/pycharm_project_769/test_26.12.24.csv']
   transform: no_transform
   image_w: 160
   image_h: 64
 
 loader:
-  batch_size: 128
+  batch_size: 256
   num_workers: 64
   pin_memory: True
   drop_last: True

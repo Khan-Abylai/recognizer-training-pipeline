@@ -23,6 +23,10 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         self.df = df
         if self.df.shape[1] == 1:
             raise NotImplementedError
+        if self.df.shape[1] == 2:
+            self.df.columns = ['filename', 'label']
+        if self.df.shape[1] == 3:
+            self.df.columns = ['filename', 'label', 'region']
         self.img_paths = df['filename'].values
         self.labels = df['label'].values
         self.train = train

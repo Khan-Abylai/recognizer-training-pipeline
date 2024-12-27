@@ -29,7 +29,7 @@ class LPDataset(BaseDataset):
 
         image = self.preprocess_x(x)
         label = self.labels[index]
-        region = None
+        region = ''
         if self.use_region:
             region = self.regions[index]
         whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890')
@@ -38,7 +38,7 @@ class LPDataset(BaseDataset):
         if self.return_filepath:
             return image, label, region, self.img_paths[index]
         else:
-            return image, region, label
+            return image, label, region
 
 
 if __name__ == '__main__':

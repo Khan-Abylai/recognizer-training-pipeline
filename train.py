@@ -78,7 +78,7 @@ def train_one_epoch(rank, model, train_dataloader, criterion, ce_loss, optimizer
         # Log training metrics
         epoch_desc = (
             f'[{epoch}/{num_epochs}] Current Loss: {current_loss:.4f} '
-            f'Loss: {train_mean_loss:.4f} Acc: {correct_train_predictions / total_train_images:.4f} Cls_Acc: {correct_cls_predictions/total_train_images} '
+            f'Loss: {train_mean_loss:.4f} Acc: {correct_train_predictions / total_train_images:.4f} Cls_Acc: {correct_cls_predictions/total_train_images:.4f} '
             f'WER: {word_error_rate / total_train_images:.4f}'
         )
         
@@ -132,13 +132,13 @@ def validate(model, val_dataloader, criterion, ce_loss, converter, region_conver
     return val_mean_loss, val_accuracy, correct_val_classifier / total_val_images
 
 
-def train_model(rank, model, start_epochs, train_dataloader, val_dataloader, criterion, ce_loss, optimizer, converter, region_converter, num_epochs, model_directory, scheduler):
+def train_model(rank, model, start_epochs, train_dataloader, val_dataloader, criterion, ce_loss, optimizer, converter, region_converter, num_epochs, model_directory, scheduler, ex_name):
     for epoch in range(start_epochs, num_epochs):
         train_mean_loss, correct_train_predictions, correct_cls_preds, total_train_images, word_error_rate = train_one_epoch(
             rank, model, train_dataloader, criterion, ce_loss, optimizer, converter, epoch, num_epochs, region_converter
         )
         
-        val_mean_loss, val_accuracy, class_accuracy = validate(model, val_dataloader, criterion, converter, region_converter)
+        val_mean_loss, val_accuracy, class_accuracy = validate(model, val_dataloader, criterion, ce_loss, converter, region_converter)
 
         train_accuracy = correct_train_predictions / total_train_images
         train_cls_accuracy = correct_cls_preds / total_train_images
@@ -153,7 +153,8 @@ def train_model(rank, model, start_epochs, train_dataloader, val_dataloader, cri
                 'state_dict': model.state_dict(),
                 'optimizer': optimizer.state_dict()
             }
-            torch.save(state, os.path.join(model_directory, epoch_description.replace(" ", "_").replace("/", "_")+'.pth'))
+            model_path = os.path.join(model_directory, epoch_description.replace(" ", "_").replace("/", "_")+'.pth')
+            torch.save(state, model_path)
             tqdm.write(epoch_description)
 
             mlflow.log_metric("train_loss", train_mean_loss, step=epoch)
@@ -163,6 +164,7 @@ def train_model(rank, model, start_epochs, train_dataloader, val_dataloader, cri
             mlflow.log_metric("val_accuracy", val_accuracy, step=epoch)
             mlflow.log_metric("val_class_accuracy", class_accuracy, step=epoch)
             mlflow.log_metric("word_error_rate", word_error_rate, step=epoch)
+            mlflow.pytorch.log_model(model, ex_name)
 
         scheduler.step(val_mean_loss)
 
@@ -177,8 +179,11 @@ def main(rank, config):
     if rank == 0:
         mlflow.set_tracking_uri("http://10.66.100.20:5000")
         mlflow.set_experiment(global_cfg["experiment_name"])
-        mlflow.start_run(run_name=global_cfg["run_name"])
-        mlflow.log_params(config)
+        mlflow.start_run(run_name=global_cfg["run_name"], run_id=global_cfg["run_id"])
+        try:
+            mlflow.log_params(config)
+        except:
+            print('mlflow params already logged')
 
     if distributed:
         dist.init_process_group(backend='nccl', init_method='env://', world_size=torch.cuda.device_count(), rank=rank)
@@ -191,6 +196,9 @@ def main(rank, config):
         model = DistributedDataParallel(model, device_ids=[rank])
     
     model, start_epoch = load_weights(model, global_cfg['checkpoint'])
+    if rank == 0:
+        mlflow.pytorch.log_model(model, global_cfg["run_name"])
+    config['scheduler']['min_lr'] = eval(config['scheduler']['min_lr'])
     optimizer = AdamW(model.parameters(), **config['optimizer'])
     scheduler = ReduceLROnPlateau(optimizer, **config['scheduler'], verbose=True)
     criterion = CTCLoss(reduction='sum', zero_infinity=True)
@@ -199,10 +207,11 @@ def main(rank, config):
 
     config['train_data']['transform'] = eval(config['train_data']['transform'])
     config['val_data']['transform'] = eval(config['val_data']['transform'])
-    if model_cfg['classification_head'] is not None:
-        region_converter = RegionConverter(model_cfg['classification_head'])
-    train_dataset = LPDataset(**config['train_data'], train=True)
-    val_dataset = LPDataset(**config['val_data'])
+    region_converter = None
+    if model_cfg['classification_regions'] is not None:
+        region_converter = RegionConverter(model_cfg['classification_regions'])
+    train_dataset = LPDataset(**config['train_data'], use_region=True if region_converter is not None else False, train=True)
+    val_dataset = LPDataset(**config['val_data'], use_region=True if region_converter is not None else False)
     if distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, num_replicas=torch.cuda.device_count(),
                                                                     rank=rank, shuffle=True)
@@ -220,7 +229,7 @@ def main(rank, config):
 
     train_model(rank, model, start_epoch, train_dataloader, val_dataloader,
                 criterion, ce_loss, optimizer, converter, region_converter, global_cfg['epochs'],
-                global_cfg['checkpoint'], scheduler)
+                global_cfg['checkpoint'], scheduler, global_cfg['run_name'])
 
     # End the MLflow run
     mlflow.end_run()
@@ -241,4 +250,5 @@ if __name__ == '__main__':
     else:
         os.environ['MASTER_ADDR'] = 'localhost'
         os.environ['MASTER_PORT'] = '12355'
-        mp.spawn(main, nprocs=torch.cuda.device_count(), args=(cfg,))
+        n_gpu = torch.cuda.device_count()
+        mp.spawn(main, nprocs=n_gpu, args=(cfg,))

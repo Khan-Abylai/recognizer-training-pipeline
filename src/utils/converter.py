@@ -15,6 +15,15 @@ class RegionConverter(object):
             print(f"Error:{E}")
             return None
 
+    def decode(self, region_idx):
+        try:
+            if type(region_idx) is list:
+                raise NotImplementedError
+            names = [self.regions[x] for x in [region_idx]]
+            return names[0]
+        except Exception as E:
+            print(f"Error:{E}")
+            return None
 
 class StrLabelConverter(object):
 

@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import torch
 from src.models import CRNN
-from src.utils import StrLabelConverter
+from src.utils import StrLabelConverter, RegionConverter
 from src.dataset.utils import preprocess
 import os
 import pandas as pd
@@ -44,13 +44,16 @@ def infer(path, transforms, model, converter, image_w, image_h, use_gpu=True):
     predicted_test_labels = np.array(converter.decode(predicted_labels, prediction_size, raw=False))
 
     if cls is not None:
-        cls = cls.argmax(1)
+        cls = int(cls.argmax(1))
     return str(predicted_test_labels) + '_' +  str(probs) + '_' + str(cls)
 
 def main(config):
     os.makedirs(config['output_folder'], exist_ok=True)
     img = config['images']
     converter = StrLabelConverter(eval(config['alphabet']))
+    region_converter = None
+    if config['model']['classification_regions'] is not None:
+        region_converter = RegionConverter(config['model']['classification_regions'])
     evaluate = config['evaluate']
     if os.path.isdir(img):
         images = os.listdir(img)
@@ -66,11 +69,12 @@ def main(config):
     df_images = pd.DataFrame(images)
     if df_images.shape[1] == 1:
         df_images.columns = ['path']
-    elif df_images.shape[1] > 2:
+    elif df_images.shape[1] == 3:
         df_images.columns = ['path', 'label', 'region']
-    else:
+    elif df_images.shape[1] == 2:
         df_images.columns = ['path', 'label']
-
+    else:
+        raise NotImplementedError
     model_cfg = config['model']
     path_model = model_cfg.pop('path', None)
     model = CRNN(**model_cfg)
@@ -92,15 +96,17 @@ def main(config):
     transforms = eval(config['transforms'])
     image_w, image_h = config['image_w'], config['image_h']
     df_images['pred_label_conf_cls'] = df_images.path.apply(infer, args=(transforms, model, converter, image_w, image_h, gpu))
-    df_images['conf'] = df_images.pred_label_conf.str.split('_').str[1].astype(np.float32)
-    df_images['pred_label'] = df_images.pred_label_conf.str.split('_').str[0]
-    df_images['region_pred'] = df_images.pred_label_conf.str.split('_').str[2]
+    df_images['conf'] = df_images.pred_label_conf_cls.str.split('_').str[1].astype(np.float32)
+    df_images['pred_label'] = df_images.pred_label_conf_cls.str.split('_').str[0]
+    df_images['region_pred'] = df_images.pred_label_conf_cls.str.split('_').str[2].astype(int)
+    del df_images['pred_label_conf_cls']
+    df_images['region_pred_decode'] = df_images.region_pred.apply(region_converter.decode)
     df_images.to_csv(os.path.join(config['output_folder'], 'inference.csv'), index=False)
     with open(os.path.join(config['output_folder'], 'info.txt'), 'w') as f:
         f.write(str(config))
     if evaluate:
         acc_rate = len(df_images[(df_images.conf > config['threshold']) & (df_images.label == df_images.pred_label)])/len(df_images)
-        cls_acc_rate = len(df_images[(df_images.region == df_images.region_pred)])/len(df_images)
+        cls_acc_rate = len(df_images[(df_images.region == df_images.region_pred_decode)])/len(df_images)
         with open(os.path.join(config['output_folder'], 'info.txt'), 'a') as f:
             f.write("\nacc_rate: "+str(acc_rate))
             f.write("\ncls_acc_rate: "+str(cls_acc_rate))
