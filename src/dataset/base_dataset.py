@@ -1,10 +1,7 @@
 from abc import ABCMeta, abstractmethod
 
 import pandas as pd
-try:
-    from src.dataset.utils import preprocess
-except:
-    from dataset.utils import preprocess
+from dataset.utils import preprocess
 from torch.utils.data.dataset import Dataset
 
 
@@ -61,8 +58,6 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             .replace('.', '') \
             .replace('|', '') \
             .replace('_', '') \
-            .replace('/', '') \
-            .replace('`', '') \
             .replace('=', '').encode("ascii", "ignore").decode()
 
         if self.return_filepath:

@@ -1,12 +1,9 @@
 import os
 
 import cv2
-try:
-    from src.dataset.base_dataset import BaseDataset
-    from src.augmentation.transforms import transform_old
-except:
-    from dataset.base_dataset import BaseDataset
-    from augmentation.transforms import transform_old
+from dataset.base_dataset import BaseDataset
+from augmentation.transforms import transform_old
+
 
 class LPDataset(BaseDataset):
     def __init__(self, data_dir, csv_files, **kwargs):
@@ -59,9 +56,9 @@ class LPRegionDataset(BaseDataset):
         region = self.regions[index]
         whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890')
         label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
-            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_','').replace(
+            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_',
+                                                                                                                  '').replace(
             '`', '').replace('=', '').encode("ascii", "ignore").decode()
-
         label = ''.join(filter(whitelist.__contains__, label))
         if self.return_filepath:
             return image, label, region, self.img_paths[index]
@@ -70,15 +67,11 @@ class LPRegionDataset(BaseDataset):
 
 
 if __name__ == '__main__':
-    params = {"train": True, "data_dir": "/home/user/mnt",
-              "csv_files": ["/home/user/mnt/data/uae/plates/generated_data_test.csv"], "transform": transform_old
+    params = {"train": True, "data_dir": "/home/user/data/data_annotation",
+              "csv_files": ["/home/user/data/annotation.csv"], "transform": transform_old
 
               }
     lpRegionDataset = LPRegionDataset(**params)
-    base_folder = '/home/user/recognizer_pipeline'
-    debug_dir = os.path.join(base_folder, 'logs', 'exp2')
-    # debug_dir = '/home/user/mnt/debug'
+    debug_dir = "/home/user/parking_recognizer/debug"
     for idx, sample in enumerate(lpRegionDataset):
         print(idx)
-        if idx == 100:
-            break

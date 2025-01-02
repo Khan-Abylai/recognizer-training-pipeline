@@ -1,47 +1,29 @@
-import os
-import copy
 import albumentations as A
 import cv2
 import numpy as np
 import torch
-from torch import nn
 import glob
 from models.base_model import CRNN_2
 from config import base_config as config
 from utils.converter import StrLabelConverter
 from dataset.utils import preprocess
-import shutil
-
-content_folder = '..'
 
 if __name__ == '__main__':
     model = CRNN_2(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
-                   is_lstm_bidirectional=config.model_lsrm_is_bidirectional, num_regions=config.num_regions).cuda()
+                   is_lstm_bidirectional=config.model_lsrm_is_bidirectional, num_regions=config.num_regions)
     converter = StrLabelConverter(config.alphabet)
-    state = torch.load('../weights/mena_recognizer_iter5_auto.pth')
-
+    state = torch.load('/home/user/parking_recognizer/weights/epoch_499.pth')
     state_dict = state['state_dict']
-    new_state_dict = copy.deepcopy(state_dict)
 
-    for key in state_dict:
-        new_state_dict[key.replace('module.', '')] = new_state_dict.pop(key)
-
-    model.load_state_dict(new_state_dict)
+    model.load_state_dict(state_dict)
     model.cuda()
     model.eval()
-    regions = config.regions
+    regions = ["dubai", "abu-dhabi", "sharjah", "ajman", "ras-al-khaimah", "fujairah", "alquwain"]
     transformer = A.Compose([A.NoOp()])
 
-    images = sorted(glob.glob(f'{content_folder}/debug/in/*'))
-    out_folder = os.path.join(f'{content_folder}/debug/exp')
-
-    if not os.path.exists(out_folder):
-        os.mkdir(out_folder)
-
+    images = sorted(glob.glob('/home/user/parking_recognizer/debug/test_images_uae/*'))
     for idx, image in enumerate(images):
         img = cv2.imread(image)
-        if img  is None:
-            continue
         preprocessed_image = preprocess(img, transform=transformer).unsqueeze(0)
 
         cuda_image = preprocessed_image.cuda()
@@ -55,6 +37,4 @@ if __name__ == '__main__':
         predicted_test_labels = np.array(converter.decode(predicted_labels, prediction_size, raw=False))
         predicted_raw_test_labels = np.array(converter.decode(predicted_labels, prediction_size, raw=True))
 
-        new_path = os.path.join(out_folder, predicted_test_labels.item()+'_'+regions[cls_idx]+'.jpg')
-        shutil.copy(image, new_path)
-        print(f"path for new plate:{new_path}")
+        print(image, predicted_test_labels, regions[cls_idx])

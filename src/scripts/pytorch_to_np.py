@@ -2,8 +2,9 @@ import numpy as np
 import torch
 
 if __name__ == '__main__':
-    in_path = '../../weights/recognizer_mena.pth'
-    out_path = '../../weights/recognizer_mena.np'
+    in_path = '/home/user/parking_recognizer/weights/epoch_499.pth'
+    # in_path = './weights/ckpt.pth'
+    out_path = '/home/user/parking_recognizer/weights/recognizer_weights_usa_last.np'
     torch_weights = torch.load(in_path, map_location='cpu')['state_dict']
     stop = 1
     weights = []

@@ -4,10 +4,7 @@ warnings.filterwarnings("ignore")
 
 import albumentations as A
 
-try:
-    from src.augmentation.aug_mix import RandomAugMix
-except:
-    from augmentation.aug_mix import RandomAugMix
+from augmentation.aug_mix import RandomAugMix
 from albumentations import (
     CLAHE, ShiftScaleRotate, Blur, OpticalDistortion, GridDistortion, HueSaturationValue,
     GaussNoise, MotionBlur, MedianBlur, IAAPiecewiseAffine,
