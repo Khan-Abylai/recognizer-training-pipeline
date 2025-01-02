@@ -2,8 +2,11 @@ import cv2
 import numpy as np
 import torch
 from PIL import Image, ImageOps
+import os
+# from src.config import base_config as config
+# from src.scripts.random_string_generator import get_random_string_generator
 
-from config import base_config as config
+DEBUG_DIR = '/home/user/mnt/debug'
 
 
 def padding(img, expected_size):
@@ -27,42 +30,45 @@ def resize_with_padding(img, expected_size):
     return ImageOps.expand(img, padding)
 
 
-def preprocess(img, transform=None, imwrite=None):
+def preprocess(img, transform=None, imwrite=True):
     original_image = img.copy()
     h, w, _ = img.shape
-    left = 0
-    right = 0
-    top = 0
-    bottom = 0
-    if w > h:
-        h = int(h * config.img_w / w)
-        w = config.img_w
-        top = (config.img_h - h) // 2
-        bottom = config.img_h - h - top
-    else:
-        w = int(w * config.img_h / h)
-        h = config.img_h
-        left = (config.img_w - w) // 2
-        right = config.img_w - w - left
-    if top < 0 or bottom < 0 or left < 0 or right < 0:
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (w, h))
-        im_pil = Image.fromarray(img)
-        img = resize_with_padding(im_pil, (config.img_w, config.img_h))
-        x = np.asarray(img)
-        if transform is not None:
-            x = transform(image=x)['image']
-    else:
-        x = cv2.resize(img, (w, h))
-        if transform is not None:
-            x = transform(image=x)['image']
-        x = cv2.copyMakeBorder(x, top, bottom, left, right,
-                               cv2.BORDER_CONSTANT, value=(0, 0, 0))
+    # left = 0
+    # right = 0
+    # top = 0
+    # bottom = 0
+    # if w > h:
+    #     h = int(h * config.img_w / w)
+    #     w = config.img_w
+    #     top = (config.img_h - h) // 2
+    #     bottom = config.img_h - h - top
+    # else:
+    #     w = int(w * config.img_h / h)
+    #     h = config.img_h
+    #     left = (config.img_w - w) // 2
+    #     right = config.img_w - w - left
+    # if top < 0 or bottom < 0 or left < 0 or right < 0:
+    #     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    #     img = cv2.resize(img, (w, h))
+    #     im_pil = Image.fromarray(img)
+    #     img = resize_with_padding(im_pil, (config.img_w, config.img_h))
+    #     x = np.asarray(img)
+    #     if transform is not None:
+    #         x = transform(image=x)['image']
+    # else:
+        # x = cv2.resize(img, (w, h))
+    x = cv2.resize(img, (160, 64))
+    if transform is not None:
+        x = transform(image=x)['image']
+        # x = cv2.copyMakeBorder(x, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0, 0, 0))
+
+
+
     # if imwrite is not None and imwrite:
     #     f_name = get_random_string_generator(10, postfix="-1.jpg")
     #     second_f_name = f_name.replace("-1.jpg", "-2.jpg")
-    #     path = os.path.join("/home/user/parking_recognizer/debug", f_name)
-    #     path_2 = os.path.join("/home/user/parking_recognizer/debug", second_f_name)
+    #     path = os.path.join(DEBUG_DIR, f_name)
+    #     path_2 = os.path.join(DEBUG_DIR, second_f_name)
     #     cv2.imwrite(path, x)
     #     cv2.imwrite(path_2, original_image)
 

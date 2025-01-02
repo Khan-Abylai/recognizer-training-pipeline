@@ -1,5 +1,5 @@
 import collections
-
+from copy import copy
 import torch
 
 
@@ -12,7 +12,7 @@ class RegionConverter(object):
             index = [self.regions.index(x) for x in region_names]
             return torch.LongTensor(index)
         except Exception as E:
-            print(f"Error:{E}")
+            print(f"Fuck Error:{E}")
             return None
 
 
@@ -28,10 +28,11 @@ class StrLabelConverter(object):
         self.alphabet_indicies = {char: i for i, char in enumerate(self.alphabet)}
 
     def encode(self, text):
+        original_text = copy(text)
         # print(text)
         try:
             if isinstance(text, str):
-                text = text.replace(',', '')
+                text = text.replace(',', '').replace('`','')
                 text = [self.alphabet_indicies[char.lower() if self._ignore_case else char] for char in text]
                 length = [len(text)]
             elif isinstance(text, collections.Iterable):
@@ -40,8 +41,9 @@ class StrLabelConverter(object):
                 text, _ = self.encode(text)
             return torch.LongTensor(text), torch.LongTensor(length)
         except Exception as E:
-            print(text)
-            print(f"Error:{E}")
+            print('Error is here')
+            print(E)
+            print(original_text)
             return None
 
     def decode(self, t, length, raw=False):

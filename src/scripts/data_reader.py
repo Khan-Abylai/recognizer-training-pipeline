@@ -4,13 +4,18 @@ from glob import glob
 import numpy as np
 from sklearn.model_selection import StratifiedShuffleSplit
 
-f_path = '/home/user/data/experiment/fine_tuning_for_USA/annotations.csv'
+f_path = '/home/yeleussinova/data_SSD/eu_plate_data/train.csv'
 df = pd.read_csv(f_path)
-df["emirate"] = "dubai"
+print(df.tail(1))
+# df["region"] = ['albania', 'andorra', 'austria', 'belgium', 'bosnia', 'bulgaria', 'croatia', 'cyprus', 'czech', 'estonia',
+#            'finland', 'france', 'germany', 'greece', 'hungary', 'ireland', 'italy', 'latvia',
+#            'licht', 'lithuania', 'luxemburg', 'malta', 'monaco', 'montenegro', 'netherlands', 'poland',
+#            'portugal', 'romania', 'san_marino', 'slovakia', 'slovenia', 'spain', 'sweden', 'swiss']
 stop = 1
 sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1, random_state=0)
 X = df[["image_path", "plate_label"]].values
-y = df["emirate"].values
+y = df["region"].values
+
 sss.get_n_splits(X, y)
 for train_index, test_index in sss.split(X, y):
     X_train, X_test = X[train_index], X[test_index]
@@ -26,5 +31,5 @@ df_val = pd.DataFrame(data=test, columns=['image_path', 'car_labels', 'region'])
 print(df_train["region"].value_counts())
 print(df_val["region"].value_counts())
 
-df_train.to_csv("/home/user/data/experiment/fine_tuning_for_USA/train.csv", index_label=None, index=None)
-df_val.to_csv("/home/user/data/experiment/fine_tuning_for_USA/val.csv", index_label=None, index=None)
+df_train.to_csv("/home/yeleussinova/data_SSD/eu_plate_data/train1.csv", index_label=None, index=None)
+df_val.to_csv("/home/yeleussinova/data_SSD/eu_plate_data/test.csv", index_label=None, index=None)

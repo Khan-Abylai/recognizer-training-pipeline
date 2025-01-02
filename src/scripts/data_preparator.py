@@ -68,5 +68,5 @@ for idx, key in enumerate(content):
                 final.append(full_data)
                 print(f"Proceeds:{idx}")
 
-df_out = pd.DataFrame(data=final, columns=['image_path', 'plate_label', 'emirate'])
+df_out = pd.DataFrame(data=final, columns=['image_path', 'plate_label', 'region'])
 df_out.to_csv('/home/user/data/experiment/fine_tuning_for_USA/annotations.csv', index_label=False, index=False)

@@ -1,8 +1,8 @@
 import os
 
 import cv2
-from dataset.base_dataset import BaseDataset
-from augmentation.transforms import transform_old
+from src.dataset.base_dataset import BaseDataset
+from src.augmentation.transforms import transform_old
 
 
 class LPDataset(BaseDataset):
@@ -54,12 +54,15 @@ class LPRegionDataset(BaseDataset):
         image = self.preprocess_x(x)
         label = self.labels[index]
         region = self.regions[index]
-        whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890')
+        whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890@&!?%^#$|')
         label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
-            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_',
-                                                                                                                  '').replace(
-            '`', '').replace('=', '').encode("ascii", "ignore").decode()
+            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_','').replace(
+            '`', '').replace('=', '') #.encode("ascii", "ignore").decode()
+
+        # replace acuts
+        label = label.replace('å', '@').replace('ä', '&').replace('ć', '!').replace('č', '?').replace('đ', '%').replace('ö', '^').replace('ü', '#').replace('š', '$').replace('ž', '|')
         label = ''.join(filter(whitelist.__contains__, label))
+
         if self.return_filepath:
             return image, label, region, self.img_paths[index]
         else:
@@ -67,11 +70,15 @@ class LPRegionDataset(BaseDataset):
 
 
 if __name__ == '__main__':
-    params = {"train": True, "data_dir": "/home/user/data/data_annotation",
-              "csv_files": ["/home/user/data/annotation.csv"], "transform": transform_old
-
+    params = {"train": True, "data_dir": "/",
+              "csv_files": ["/europe_last/test.csv"], "transform": transform_old
               }
+
     lpRegionDataset = LPRegionDataset(**params)
-    debug_dir = "/home/user/parking_recognizer/debug"
+    base_folder = '/home/user/recognizer_pipeline'
+    debug_dir = os.path.join(base_folder, 'logs', 'exp2')
+    # debug_dir = '/home/user/mnt/debug'
     for idx, sample in enumerate(lpRegionDataset):
-        print(idx)
+        # print(idx)
+        if idx == 1000000:
+            break
