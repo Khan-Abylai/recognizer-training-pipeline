@@ -4,17 +4,17 @@ import argparse
 import torch
 import torch.nn as nn
 import numpy as np
-from src.models.base_model import CRNN, CRNN_2
+from src.models.base_model import CRNN
 from src.config import base_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--weights_path', type=str,
-                    default='/data_ssd/wagons/recognizer/weights/wnpr_crnn/127_100_Train:_12.2981,_Accuracy:_0.9866,_Val:_4.7470,_Accuracy:_0.9980,_lr:_1.0000000000000002e-06.pth')
-parser.add_argument('--out_path', type=str, default='../../weights/wnpr_recognizer_extd.np')
-parser.add_argument('--img_h', type=int, default=64)
+                    default='/home/user/recognizer_pipeline/weights/recognizer_turkey.pth')
+parser.add_argument('--out_path', type=str, default='/home/user/recognizer_pipeline/weights/recognizer_turkey.np')
+parser.add_argument('--img_h', type=int, default=32)
 args = parser.parse_args()
 
-model = CRNN_2(image_h=base_config.img_h, num_class=base_config.num_class, num_layers=base_config.model_lstm_layers,
+model = CRNN(image_h=base_config.img_h, num_class=base_config.num_class, num_layers=base_config.model_lstm_layers,
              is_lstm_bidirectional=base_config.model_lsrm_is_bidirectional).cuda(0)
 model = nn.DataParallel(model)
 

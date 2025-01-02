@@ -3,48 +3,57 @@ import cv2
 import numpy as np
 import torch
 import glob
-from models.base_model import CRNN, CRNN_2
+from models.base_model import CRNN_3
 from config import base_config as config
 from utils.converter import StrLabelConverter
 from dataset.utils import preprocess
+import time
+import os
 
 if __name__ == '__main__':
-    # model = CRNN(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
-    #                is_lstm_bidirectional=config.model_lsrm_is_bidirectional)
-
-    model = CRNN_2(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
-                 is_lstm_bidirectional=config.model_lsrm_is_bidirectional)
-
-    model = torch.nn.parallel.DataParallel(model)
+    model = CRNN_3(img_channel=3, img_height=32, img_width=128, num_class=config.num_class, map_to_seq_hidden=64,
+                   rnn_hidden=256, leaky_relu=False)
+    device = torch.device("cuda:1")
+    model = torch.nn.parallel.DataParallel(model, device_ids=[1])
     converter = StrLabelConverter(config.alphabet)
-    state = torch.load('/data_ssd/wagons/recognizer/weights/wnpr_crnn/127_100_Train:_12.2981,_Accuracy:_0.9866,_Val:_4.7470,_Accuracy:_0.9980,_lr:_1.0000000000000002e-06.pth')
-
+    state = torch.load("../weights/azer/crnn_lite_azer.pth")
     state_dict = state['state_dict']
 
     model.load_state_dict(state_dict)
-    model.cuda()
+    model.to(device)
     model.eval()
+
     transformer = A.Compose([A.NoOp()])
 
-    out_path = "../debug/exp3/"
+    dummy_input = torch.rand((1,3,32,128), requires_grad=False)
 
-    images = sorted(glob.glob('../img/*'))
+    _ = model(dummy_input)
+
+    images = sorted(glob.glob('/home/yeleussinova/data_1TB/azer/plates/*'))
+    print(f'images: {len(images)}')
+    count = 0
     for idx, image in enumerate(images):
         img = cv2.imread(image)
+
         preprocessed_image = preprocess(img, transform=transformer).unsqueeze(0)
 
         cuda_image = preprocessed_image.cuda()
+
+        start_time = time.time()
+
         predictions = model(cuda_image)
+        predictions = predictions.log_softmax(2)
+        end_time = time.time()
 
+        exec_time = end_time - start_time
 
-        predictions = predictions.permute(1, 0, 2).contiguous()
         prediction_size = torch.IntTensor([predictions.size(0)]).repeat(1)
         predicted_probs, predicted_labels = predictions.detach().cpu().max(2)
-        # predicted_probs = torch.exp(predicted_probs).permute(1, 0).numpy()
         predicted_probs = np.around(torch.exp(predicted_probs).permute(1, 0).numpy(), decimals=1)
         predicted_test_labels = np.array(converter.decode(predicted_labels, prediction_size, raw=False))
         predicted_raw_test_labels = np.array(converter.decode(predicted_labels, prediction_size, raw=True))
 
-        # cv2.imwrite(out_path + np.array2string(predicted_test_labels).strip("'") + ".jpg", img)
-        print(predicted_probs)
-        print(image, predicted_test_labels, np.prod(predicted_probs))
+        print(predicted_test_labels, np.mean(predicted_probs), image)
+        # label = os.path.basename(image).split("_")[0].lower()
+        # if label != str(predicted_test_labels):
+        #     pass

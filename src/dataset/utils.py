@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import torch
 from PIL import Image, ImageOps
+from torchvision import transforms
 import os
 try:
     import src.config.base_config as config
@@ -69,6 +70,49 @@ def preprocess(img, transform=None, imwrite=None):
             x = transform(image=x)['image']
         x = cv2.copyMakeBorder(x, top, bottom, left, right,
                                cv2.BORDER_CONSTANT, value=(0, 0, 0))
+
+    x = x.astype(np.float32) / 255.
+    x = x.transpose(2, 0, 1)
+    x = torch.tensor(x)
+
+    return x
+
+def preprocess2(img, transform=None, imwrite=None):
+    original_image = img.copy()
+
+    x = cv2.resize(original_image, (160, 64))
+    if transform is not None:
+        x = transform(image=x)['image']
+
+    h, w, _ = img.shape
+    left = 0
+    right = 0
+    top = 0
+    bottom = 0
+    if w > h:
+        h = int(h * 160 / w)
+        w = 160
+        top = (64 - h) // 2
+        bottom = 64 - h - top
+    else:
+        w = int(w * 64 / h)
+        h = 64
+        left = (160 - w) // 2
+        right =160 - w - left
+    if top < 0 or bottom < 0 or left < 0 or right < 0:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (w, h))
+        im_pil = Image.fromarray(img)
+        img = resize_with_padding(im_pil, (160, 64))
+        x = np.asarray(img)
+        if transform is not None:
+            x = transform(image=x)['image']
+    else:
+        x = cv2.resize(img, (w, h))
+        if transform is not None:
+            x = transform(image=x)['image']
+        x = cv2.copyMakeBorder(x, top, bottom, left, right,
+                               cv2.BORDER_CONSTANT, value=(0, 0, 0))
     # if imwrite is not None and imwrite:
     #     f_name = get_random_string_generator(10, postfix="-1.jpg")
     #     second_f_name = f_name.replace("-1.jpg", "-2.jpg")
@@ -82,3 +126,22 @@ def preprocess(img, transform=None, imwrite=None):
     x = torch.tensor(x)
 
     return x
+def preprocess_lite(size, img, interpolation=Image.BILINEAR):
+    imgW, imgH = size
+    # scale = img.size[1] * 1.0 / imgH
+    # w = img.size[0] / scale
+    # w = int(w)
+    # img = img.resize((w, imgH), interpolation)
+    # w, h = img.size
+    # if w <= imgW:
+    #     newImage = np.zeros((imgH, imgW), dtype='uint8')
+    #     newImage[:] = 255
+    #     newImage[:, :w] = np.array(img)
+    #     img = Image.fromarray(newImage)
+    # else:
+    img = img.resize((imgW, imgH), interpolation)
+    # img = (np.array(img)/255.0-0.5)/0.5
+
+    img = transforms.ToTensor()(img)
+    img.sub_(0.5).div_(0.5)
+    return img

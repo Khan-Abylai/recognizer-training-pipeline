@@ -5,9 +5,9 @@ try:
 except:
     from augmentation.transforms import transform_old
 
-train_csv = ['/data_ssd/wagons/recognizer/train.csv']
+train_csv = ['/data_sda/train.csv']
 
-val_csv = ['/data_ssd/wagons/recognizer/test.csv']
+val_csv = ['/data_sda/test.csv']
 
 params = {
     'train': {

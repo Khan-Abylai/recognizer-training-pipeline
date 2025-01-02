@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 
 import pandas as pd
 try:
-    from src.dataset.utils import preprocess
+    from src.dataset.utils import preprocess, preprocess_lite, preprocess_lite2
 except:
     from dataset.utils import preprocess
 from torch.utils.data.dataset import Dataset
@@ -22,7 +22,7 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             df = df.sample(frac=1, random_state=1).reset_index(drop=True)
         self.df = df
         self.img_paths = df['filename'].values
-        self.labels = df['labels'].values
+        self.labels = df['label'].values
         self.train = train
         self.return_filepath = return_filepath
 
@@ -70,3 +70,11 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             return image, label, self.img_paths[index]
         else:
             return image, label
+
+    def preprocess_lite(self, x):
+        x = preprocess_lite((128, 32), x)
+        # if self.train:
+        #     x = preprocess_lite2(x, transform=self.transform)
+        # else:
+        #     x = preprocess_lite2(x)
+        return x

@@ -5,8 +5,9 @@ import torch
 try:
     import src.config.base_config as config
     import src.config.local_config as local_config
-    from src.dataset.lp_dataset import LPDataset
+    from src.dataset.lp_dataset import LPDataset, LPRegionDataset
     from src.models import base_model as model
+    # from src.models import crrn_lite as model
 except:
     import config.base_config as config
     import config.local_config as local_config
@@ -34,10 +35,20 @@ def get_latest_checkpoint(model_dir):
     stop = 1
     return max_epoch_filename
 
-
 def get_model(config, gpu=0):
-    net = model.CRNN_2(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
-                     is_lstm_bidirectional=config.model_lsrm_is_bidirectional).cuda(gpu)
+    # net = model.CRNN(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
+    #                  is_lstm_bidirectional=config.model_lsrm_is_bidirectional).cuda(gpu)
+
+    # net = model.CRNN_2(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
+    #                    is_lstm_bidirectional=config.model_lsrm_is_bidirectional, num_regions=config.num_regions).cuda(gpu)
+
+    # net = model.CRNN_lite(imgH=config.img_h, nc=1, nclass=config.num_class, nh=512).cuda(gpu)
+
+    # net = model.CRNN_resnet(image_h=64, image_w=160, num_class=config.num_class, hl=128, is_lstm_bidirectional=True, linear_size=512).cuda(gpu)
+
+    net = model.CRNN_3(img_channel=3, img_height=config.img_h, img_width=config.img_w, num_class=config.num_class, map_to_seq_hidden=64, rnn_hidden=256, leaky_relu=False).cuda(gpu)
+
+    # net = model.CRNN_3_cls(img_channel=3, img_height=config.img_h, img_width=config.img_w, num_class=config.num_class, map_to_seq_hidden=256, rnn_hidden=256, leaky_relu=False, num_regions=config.num_regions).cuda(gpu)
 
     net = nn.parallel.DistributedDataParallel(net, device_ids=[gpu])
     return net

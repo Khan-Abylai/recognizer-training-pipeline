@@ -1,12 +1,15 @@
 import os
 
 import cv2
+from PIL import Image
+
 try:
     from src.dataset.base_dataset import BaseDataset
     from src.augmentation.transforms import transform_old
 except:
     from dataset.base_dataset import BaseDataset
     from augmentation.transforms import transform_old
+
 
 class LPDataset(BaseDataset):
     def __init__(self, data_dir, csv_files, **kwargs):
@@ -25,13 +28,15 @@ class LPDataset(BaseDataset):
             return self[index + 1]
 
         image = self.preprocess_x(x)
+
         label = self.labels[index]
 
-        label = str(label).strip().lower().replace(')', '').replace('(', '').replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
-            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_',
+        label = str(label).strip().lower().replace(')', '').replace('(', '').replace('\n', '').replace(' ', '').replace(
+            '!', '').replace('#', '').replace('@', '').replace('?', '').replace('$', '').replace('-', '').replace('|',
                                                                                                                   '').replace(
-            '=', '').replace("*", '').replace("/", '').replace("+", '').replace("'", '').replace("[", '').encode("ascii", "ignore").decode()
-        label = ''.join(i for i in label if i.isalpha() or i.isdigit())
+            '_', '').replace('=', '').replace("*", '').replace("/", '').replace("+", '').replace("'", '').replace("[",
+            '').encode("ascii", "ignore").decode()
+        label = ''.join(i for i in label if i.isalpha() or i.isdigit() or i == '.')
         if self.return_filepath:
             return image, label, self.img_paths[index]
         else:
@@ -58,7 +63,10 @@ class LPRegionDataset(BaseDataset):
         label = self.labels[index]
         region = self.regions[index]
         whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890')
-        label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace('@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_','').replace('`', '').replace('=', '').encode("ascii", "ignore").decode()
+        label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
+            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_',
+                                                                                                                  '').replace(
+            '`', '').replace('=', '').encode("ascii", "ignore").decode()
         label = ''.join(filter(whitelist.__contains__, label))
         if self.return_filepath:
             return image, label, region, self.img_paths[index]
@@ -67,11 +75,10 @@ class LPRegionDataset(BaseDataset):
 
 
 if __name__ == '__main__':
-    params = {"train": True, "data_dir": "/mnt/data",
-              "csv_files": ["/mnt/data/csv/mini_train.csv"], "transform": transform_old
+    params = {"train": True, "data_dir": "", "csv_files": ["/data/uae/main/test.csv"], "transform": transform_old
 
               }
-    lpRegionDataset = LPDataset(**params)
-    debug_dir = "/home/user/parking_recognizer/debug/test_images"
+    lpRegionDataset = LPRegionDataset(**params)
+    # debug_dir = "/home/user/parking_recognizer/debug/test_images"
     for idx, sample in enumerate(lpRegionDataset):
         print(idx)
