@@ -71,7 +71,7 @@ class CRNN(nn.Module):
             ConvBlock(in_channels=512, out_channels=512, kernel_size=3, stride=1, padding=1),
             ConvBlock(in_channels=512, out_channels=512, kernel_size=3, stride=1, padding=0), )
 
-        self.squeeze = nn.Sequential(nn.Linear(512 * 6, 256), nn.ReLU(inplace=True), nn.Dropout(0.5))
+        self.squeeze = nn.Sequential(nn.Linear(512 * 14, 256), nn.ReLU(inplace=True), nn.Dropout(0.5))
 
         initializer.xavier_uniform_(self.squeeze[0].weight)
 
@@ -80,14 +80,14 @@ class CRNN(nn.Module):
     @autocast()
     def forward(self, x):
         x = self.cnn(x)
-        x = x.view(-1, 512 * 6, 30).permute(0, 2, 1).contiguous()
+        x = x.view(-1, 512 * 14, 38).permute(0, 2, 1).contiguous()
         x = self.squeeze(x)
         return self.rnn(x)
 
 
 class CRNN_2(nn.Module):
 
-    def __init__(self, image_h, num_class, num_layers, is_lstm_bidirectional, num_regions=7):
+    def __init__(self, image_h, num_class, num_layers, is_lstm_bidirectional, num_regions):
         super(CRNN_2, self).__init__()
 
         self.cnn = nn.Sequential(
@@ -106,7 +106,7 @@ class CRNN_2(nn.Module):
 
         self.squeeze = nn.Sequential(nn.Linear(512 * 14, 256), nn.ReLU(inplace=True), nn.Dropout(0.5))
 
-        # self.classificator = nn.Sequential(nn.Linear(9728, num_regions))
+        self.classificator = nn.Sequential(nn.Linear(9728, num_regions))
 
         initializer.xavier_uniform_(self.squeeze[0].weight)
 
@@ -118,5 +118,5 @@ class CRNN_2(nn.Module):
         x = x.view(-1, 512 * 14, 38).permute(0, 2, 1).contiguous()
 
         x = self.squeeze(x)
-        # cls = x.view(x.size(0), -1)
-        return self.rnn(x) #, self.classificator(cls)
+        cls = x.view(x.size(0), -1)
+        return self.rnn(x), self.classificator(cls)

@@ -1,9 +1,6 @@
 import random
 
-try:
-    import src.config.base_config as config
-except Exception:
-    import config.base_config as config
+import configs.base_config as config
 import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset

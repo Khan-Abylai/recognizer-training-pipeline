@@ -1,3 +1,0 @@
-weights/recognizer_base.pth filter=lfs diff=lfs merge=lfs -text
-weights/recognizer_turkey.pth filter=lfs diff=lfs merge=lfs -text
-weights/uk_recognizer.pth filter=lfs diff=lfs merge=lfs -text

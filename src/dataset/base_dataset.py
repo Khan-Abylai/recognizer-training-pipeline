@@ -21,8 +21,8 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
         if train:
             df = df.sample(frac=1, random_state=1).reset_index(drop=True)
         self.df = df
-        self.img_paths = df['filename'].values
-        self.labels = df['labels'].values
+        self.img_paths = df['image_path'].values
+        self.labels = df['car_labels'].values
         self.train = train
         self.return_filepath = return_filepath
 
@@ -62,10 +62,9 @@ class BaseDataset(Dataset, metaclass=ABCMeta):
             .replace('|', '') \
             .replace('_', '') \
             .replace('/', '') \
-            .replace("*", '') \
+            .replace('`', '') \
             .replace('=', '').encode("ascii", "ignore").decode()
-        whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890')
-        label = ''.join(filter(whitelist.__contains__, label))
+
         if self.return_filepath:
             return image, label, self.img_paths[index]
         else:

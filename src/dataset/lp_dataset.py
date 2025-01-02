@@ -27,11 +27,11 @@ class LPDataset(BaseDataset):
         image = self.preprocess_x(x)
         label = self.labels[index]
 
-        label = str(label).strip().lower().replace(')', '').replace('(', '').replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
+        label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
             '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_',
                                                                                                                   '').replace(
-            '=', '').replace("*", '').replace("/", '').replace("+", '').replace("'", '').replace("[", '').encode("ascii", "ignore").decode()
-        label = ''.join(i for i in label if i.isalpha() or i.isdigit())
+            '=', '').encode("ascii", "ignore").decode()
+
         if self.return_filepath:
             return image, label, self.img_paths[index]
         else:
@@ -58,7 +58,10 @@ class LPRegionDataset(BaseDataset):
         label = self.labels[index]
         region = self.regions[index]
         whitelist = set('abcdefghijklmnopqrstuvwxyz1234567890')
-        label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace('@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_','').replace('`', '').replace('=', '').encode("ascii", "ignore").decode()
+        label = str(label).strip().lower().replace('\n', '').replace(' ', '').replace('!', '').replace('#', '').replace(
+            '@', '').replace('?', '').replace('$', '').replace('-', '').replace('.', '').replace('|', '').replace('_','').replace(
+            '`', '').replace('=', '').encode("ascii", "ignore").decode()
+
         label = ''.join(filter(whitelist.__contains__, label))
         if self.return_filepath:
             return image, label, region, self.img_paths[index]
@@ -67,11 +70,15 @@ class LPRegionDataset(BaseDataset):
 
 
 if __name__ == '__main__':
-    params = {"train": True, "data_dir": "/mnt/data",
-              "csv_files": ["/mnt/data/csv/mini_train.csv"], "transform": transform_old
+    params = {"train": True, "data_dir": "/home/user/mnt",
+              "csv_files": ["/home/user/mnt/data/uae/plates/generated_data_test.csv"], "transform": transform_old
 
               }
-    lpRegionDataset = LPDataset(**params)
-    debug_dir = "/home/user/parking_recognizer/debug/test_images"
+    lpRegionDataset = LPRegionDataset(**params)
+    base_folder = '/home/user/recognizer_pipeline'
+    debug_dir = os.path.join(base_folder, 'logs', 'exp2')
+    # debug_dir = '/home/user/mnt/debug'
     for idx, sample in enumerate(lpRegionDataset):
         print(idx)
+        if idx == 100:
+            break

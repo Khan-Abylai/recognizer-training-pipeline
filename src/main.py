@@ -180,9 +180,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--data_dir', type=str, default=config.data_dir
     )
+
+
     args = parser.parse_args()
-
-
     random.seed(42)
     np.random.seed(42)
 

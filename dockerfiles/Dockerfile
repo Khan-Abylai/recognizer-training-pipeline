@@ -2,56 +2,20 @@ FROM pytorch/pytorch:1.7.0-cuda11.0-cudnn8-runtime
 
 SHELL ["/bin/bash", "-c"]
 ENV NVIDIA_DRIVER_CAPABILITIES all
-
-ENV TZ=Asia/Almaty
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
 RUN DEBIAN_FRONTEND="noninteractive" apt-get update && apt-get -y install tzdata
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-dev python3-pip git wget build-essential ssh gcc sudo \
-        g++ \
-        gdb \
-        clang \
-        cmake \
-        rsync \
-        tar \
-        ffmpeg libsm6 libxext6 \
-        python3-pip \
-        libsm6 \
-        libxext6 \
-        libxrender-dev \
-        python3 \
-        python3-dev \
-        python3-pip \
-        git \
-        wget \
-        build-essential \
-        ssh \
-        gcc \
-        sudo \
-        g++ \
-        gdb \
-        clang \
-        cmake \
-        rsync \
-        tar \
-        ffmpeg \
-        libsm6 \
-        libxext6 \
-        python3-dev \
-        && apt-get clean
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-dev python3-pip git wget build-essential ssh gcc sudo\
+      g++ \
+      gdb \
+      clang \
+      cmake \
+      rsync \
+      tar \
+      ffmpeg libsm6 libxext6 \
+      && apt-get clean
 
 RUN /opt/conda/bin/pip3 install --upgrade pip
 RUN /opt/conda/bin/pip3 install --no-cache-dir setuptools && /opt/conda/bin/pip3 install --no-cache-dir scikit-build opencv-python numpy scipy imgaug scikit-image scikit-learn albumentations jupyterlab tqdm matplotlib pandas catalyst augmentation
-
-# Setting some environment variables.
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/lib" \
-    PYTHONIOENCODING=UTF-8 \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8
 
 RUN ( \
     echo 'LogLevel DEBUG2'; \

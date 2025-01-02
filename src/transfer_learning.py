@@ -23,25 +23,25 @@ logger = logging.getLogger('training')
 
 
 def train(arguments, gpu):
-    base_model, start_epoch = utils.get_model(arguments.load_weights, arguments.checkpoint_dir, gpu)
+    model, start_epoch = utils.get_model(arguments.load_weights, arguments.checkpoint_dir, gpu)
 
-    teacher_state_dict = torch.load(arguments.teacher_model_path)['state_dict']
-    model = CRNN_2(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
-                   is_lstm_bidirectional=config.model_lsrm_is_bidirectional, num_regions=config.num_regions)
-    model_dict = model.state_dict()
+    if arguments.load_weights is None:
+        teacher_state_dict = torch.load(arguments.teacher_model_path)['state_dict']
+        model = CRNN_2(image_h=config.img_h, num_class=config.num_class, num_layers=config.model_lstm_layers,
+                       is_lstm_bidirectional=config.model_lsrm_is_bidirectional, num_regions=config.num_regions)
+        model_dict = model.state_dict()
 
-    keys = []
-    for k, v in teacher_state_dict.items():
-        if "classificator" in k:
-            keys.append(k)
+        keys = []
+        for k, v in teacher_state_dict.items():
+            if "classificator" in k:
+                keys.append(k)
 
-    for item in keys:
-        del teacher_state_dict[item]
-    pretrained_dict = {k: v for k, v in teacher_state_dict.items() if k in model_dict}
-    model_dict.update(pretrained_dict)
-    model.load_state_dict(pretrained_dict, strict=False)
+        for item in keys:
+            del teacher_state_dict[item]
+        pretrained_dict = {k: v for k, v in teacher_state_dict.items() if k in model_dict}
+        model_dict.update(pretrained_dict)
+        model.load_state_dict(pretrained_dict, strict=False)
     model.cuda()
-
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=arguments.lr, amsgrad=True)
     scheduler = lr_scheduler.ReduceLROnPlateau(optimizer, 'min', factor=0.1, patience=5, min_lr=1e-6, verbose=True)
@@ -53,9 +53,9 @@ def train(arguments, gpu):
     converter = StrLabelConverter(config.alphabet)
     region_converter = RegionConverter(config.regions)
 
-    train_param = {"train": True, "data_dir": arguments.data_dir, "csv_files": ["/home/user/data/experiment/fine_tuning_for_UAE/uae_data/train.csv"],
+    train_param = {"train": True, "data_dir": arguments.data_dir, "csv_files": ["/home/user/data/experiment/fine_tuning_for_USA/train.csv"],
                    "transform": transform_old}
-    val_param = {"train": False, "data_dir": arguments.data_dir, "csv_files": ["/home/user/data/experiment/fine_tuning_for_UAE/uae_data/val.csv"],
+    val_param = {"train": False, "data_dir": arguments.data_dir, "csv_files": ["/home/user/data/experiment/fine_tuning_for_USA/val.csv"],
                  "transform": A.Compose([A.NoOp()])}
 
     train_dataset = LPRegionDataset(**train_param)
@@ -168,7 +168,7 @@ def train(arguments, gpu):
             i += 1
         state = {'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}
         print("saving model")
-        utils.save_model("/home/user/data/experiment/fine_tuning_for_UAE/child_model", state, epoch)
+        utils.save_model("/home/user/data/experiment/fine_tuning_for_USA/child_model", state, epoch)
 
 
 if __name__ == '__main__':
@@ -179,15 +179,15 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.0001)
     parser.add_argument('--optim', type=str, default='Adam')
     parser.add_argument('--load_weights', type=int, default=None)
-    parser.add_argument('--epochs', type=int, default=200)
+    parser.add_argument('--epochs', type=int, default=500)
     parser.add_argument('--batch_multiplier', type=int, default=1,
                         help='actual batch size = batch_size * batch_multiplier (use when cuda out of memory)')
     parser.add_argument('--checkpoint_dir', type=str,
-                        default="/home/user/data/experiment/fine_tuning_for_UAE/model")
+                        default="/home/user/data/experiment/fine_tuning_for_USA/child_model")
     parser.add_argument('--checkpoint', type=str, default="")
-    parser.add_argument('--data_dir', type=str, default="/home/user/data/experiment/fine_tuning_for_UAE/uae_data")
+    parser.add_argument('--data_dir', type=str, default="/home/user/data/experiment/fine_tuning_for_USA")
     parser.add_argument("--teacher_model_path", type=str,
-                        default='/home/user/data/experiment/fine_tuning_for_UAE/base_model_weights/epoch_53.pth')
+                        default='/home/user/data/experiment/fine_tuning_for_USA/teacher_model/teacher_model.pth')
     args = parser.parse_args()
     random.seed(42)
     np.random.seed(42)
